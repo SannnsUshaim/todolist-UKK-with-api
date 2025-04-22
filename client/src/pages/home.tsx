@@ -40,10 +40,11 @@ export const Home = () => {
   });
 
   const [search, setSearch] = React.useState("");
-  const [openModal, setOpenModal] = React.useState(null);
-  const [openModalDone, setOpenModalDone] = React.useState(null);
+  const [openModal, setOpenModal] = React.useState(false);
+  const [openModalDone, setOpenModalDone] = React.useState(false);
   //   const [status, setStatus] = React.useState(null);
   const [idTask, setIdTask] = React.useState(null);
+  const [tabFilter, setTabFilter] = React.useState("all");
   const filteredTask = task?.find((task) => task._id == idTask);
   const statusTask = filteredTask?.status;
   const statusUpdate = statusTask === 1 ? 0 : 1;
@@ -65,24 +66,49 @@ export const Home = () => {
   const todayTask = filterSearchTasks(
     task
       ?.filter(
-        (task) => dayjs(task.deadlineDate).format("YYYY-MM-DD") === todayData
+        (task) =>
+          dayjs(task.deadlineDate).format("YYYY-MM-DD") === todayData &&
+          (tabFilter === "all"
+            ? dayjs(task.deadlineDate).format("YYYY-MM-DD") === todayData
+            : tabFilter === "high"
+            ? task.priority === "high"
+            : tabFilter === "medium"
+            ? task.priority === "medium"
+            : task.priority === "low")
       )
       ?.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-  ); // Urutkan berdasarkan prioritas;
+  );
   const upcomingTask = filterSearchTasks(
     task
       ?.filter(
-        (task) => dayjs(task.deadlineDate).format("YYYY-MM-DD") > todayData
+        (task) =>
+          dayjs(task.deadlineDate).format("YYYY-MM-DD") > todayData &&
+          (tabFilter === "all"
+            ? dayjs(task.deadlineDate).format("YYYY-MM-DD") > todayData
+            : tabFilter === "high"
+            ? task.priority === "high"
+            : tabFilter === "medium"
+            ? task.priority === "medium"
+            : task.priority === "low")
       )
       ?.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-  ); // Urutkan berdasarkan prioritas;
+  );
+
   const overdueTask = filterSearchTasks(
     task
       ?.filter(
-        (task) => dayjs(task.deadlineDate).format("YYYY-MM-DD") < todayData
+        (task) =>
+          dayjs(task.deadlineDate).format("YYYY-MM-DD") < todayData &&
+          (tabFilter === "all"
+            ? dayjs(task.deadlineDate).format("YYYY-MM-DD") < todayData
+            : tabFilter === "high"
+            ? task.priority === "high"
+            : tabFilter === "medium"
+            ? task.priority === "medium"
+            : task.priority === "low")
       )
       ?.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-  ); // Urutkan berdasarkan prioritas;
+  );
 
   const handleClickTask = () => {
     setOpenModal(true);
@@ -209,7 +235,7 @@ export const Home = () => {
         </div>
         <div className="col-span-6">
           <Input
-            className="bg-gray-200"
+            className="bg-gray-200 ms-1"
             key="search"
             placeholder={`Search task`}
             value={search}
@@ -219,6 +245,37 @@ export const Home = () => {
           />
         </div>
         <div className="col-span-6"></div>
+        <div className="flex gap-3 col-span-4">
+          <Badge
+            variant="default"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("all")}
+          >
+            <p>All</p>
+          </Badge>
+          <Badge
+            variant="high"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("high")}
+          >
+            <p>High</p>
+          </Badge>
+          <Badge
+            variant="medium"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("medium")}
+          >
+            <p>Medium</p>
+          </Badge>
+          <Badge
+            variant="low"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("low")}
+          >
+            <p>Low</p>
+          </Badge>
+        </div>
+        <div className="col-span-8"></div>
         {search ? (
           <div className="col-span-12">
             <div className="flex gap-2 items-center text-base font-semibold">
@@ -248,14 +305,16 @@ export const Home = () => {
                   onClick={() => {
                     setIdTask(task._id), handleClickTask();
                   }}
-                  className="flex-shrink-0 min-w-72 flex flex-col items-start gap-2 bg-dark text-white p-4 rounded-md hover:cursor-pointer" // Tambahkan flex-shrink-0 dan min-w-72
+                  className={`flex-shrink-0 min-w-72 flex flex-col items-start gap-2 text-dark p-4 rounded-md hover:cursor-pointer ${
+                    task.priority === "high"
+                      ? "bg-red-300"
+                      : task.priority === "medium"
+                      ? "bg-yellow-200"
+                      : "bg-green-300"
+                  }`} // Tambahkan flex-shrink-0 dan min-w-72
                 >
                   {/* Konten task tetap sama */}
                   <p className="text-xl font-medium">{task.title}</p>
-                  <p className="opacity-80">
-                    Priority :{" "}
-                    <span className="uppercase">{task.priority}</span>
-                  </p>
                   <p className="opacity-70">view details...</p>
                 </div>
               ))
@@ -285,14 +344,16 @@ export const Home = () => {
                   onClick={() => {
                     setIdTask(task._id), handleClickTask();
                   }}
-                  className="flex-shrink-0 min-w-72 flex flex-col items-start gap-2 bg-dark text-white p-4 rounded-md hover:cursor-pointer"
+                  className={`flex-shrink-0 min-w-72 flex flex-col items-start gap-2 text-dark p-4 rounded-md hover:cursor-pointer ${
+                    task.priority === "high"
+                      ? "bg-red-300"
+                      : task.priority === "medium"
+                      ? "bg-yellow-200"
+                      : "bg-green-300"
+                  }`}
                 >
                   {/* Konten task tetap sama */}
                   <p className="text-xl font-medium">{task.title}</p>
-                  <p className="opacity-80">
-                    Priority :{" "}
-                    <span className="uppercase">{task.priority}</span>
-                  </p>
                   <p>{dayjs(task.deadlineDate).format("dddd, DD MMMM YYYY")}</p>
                   <p className="opacity-70">view details...</p>
                 </div>

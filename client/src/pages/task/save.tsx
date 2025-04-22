@@ -54,32 +54,20 @@ export const Save = () => {
       deadlineDate: undefined,
     },
   });
-
-  // const [selectedDate, setSelectedDate] = React.useState(null);
-  // Perbaikan untuk Date Picker
-  // const handleSelectedDate = (date) => {
-  //   setSelectedDate(date);
-  // };
-
-  // console.log(form.watch("status"));
-
-  // // Perbaikan untuk Status Select
-  // const handleStatusChange = (value: string) => {
-  //   form.setValue("status", Number(value));
-  // };
-
-  // console.log(form.watch("deadlineDate"));
+  
+  const [selectedDate, setSelectedDate] = React.useState<Date>();
 
   React.useEffect(() => {
     if (task) {
+      setSelectedDate(task.deadlineDate);
       form.reset({
         title: task.title,
         description: task.description,
         priority: task.priority,
-        deadlineDate: task.deadlineDate,
+        deadlineDate: selectedDate,
       });
     }
-  }, [form, task]);
+  }, [form, task, selectedDate]);
 
   const onSubmit = async (values: z.infer<typeof TaskSchema>) => {
     try {
@@ -231,7 +219,7 @@ export const Save = () => {
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
-                          initialFocus
+                          // initialFocus
                         />
                       </PopoverContent>
                     </Popover>

@@ -11,9 +11,7 @@ import {
   DialogTitle,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
-import {
-  TaskDeleteSchema
-} from "../../schemas/task";
+import { TaskDeleteSchema } from "../../schemas/task";
 import axios from "axios";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,16 +19,13 @@ import toast from "react-hot-toast";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Form, FormControl, FormField } from "../../components/ui/form";
 import { Input } from "../../components/ui/input";
+import { FileX } from "lucide-react";
 
 export const Report = () => {
   const today = dayjs().format("YYYY-MM-DD");
   const { data: tasks, mutate } = useSWR(
     "http://localhost:3300/api/tasks/done",
     fetcher
-  );
-
-  const todayTask = tasks?.filter(
-    (task) => dayjs(task.deadlineDate).format("YYYY-MM-DD") === today
   );
 
   const form = useForm<z.infer<typeof TaskDeleteSchema>>({
@@ -45,6 +40,29 @@ export const Report = () => {
   const filteredTask = tasks?.find((task) => task._id === idTask);
   const [openModal, setOpenModal] = React.useState(false);
   const [openModalDelete, setOpenModalDelete] = React.useState(false);
+  const [tabFilter, setTabFilter] = React.useState("all");
+
+  const allTask = tasks?.filter((task) =>
+    tabFilter === "all"
+      ? task
+      : tabFilter === "high"
+      ? task.priority === "high"
+      : tabFilter === "medium"
+      ? task.priority === "medium"
+      : task.priority === "low"
+  );
+
+  const todayTask = tasks?.filter(
+    (task) =>
+      dayjs(task.deadlineDate).format("YYYY-MM-DD") === today &&
+      (tabFilter === "all"
+        ? dayjs(task.deadlineDate).format("YYYY-MM-DD") === today
+        : tabFilter === "high"
+        ? task.priority === "high"
+        : tabFilter === "medium"
+        ? task.priority === "medium"
+        : task.priority === "low")
+  );
 
   const onDeleteSubmit = async (values: z.infer<typeof TaskDeleteSchema>) => {
     try {
@@ -162,7 +180,7 @@ export const Report = () => {
             }`}
           >
             <Badge variant={tab === "all" ? "secondary" : "default"}>
-              {tasks?.length}
+              {allTask?.length}
             </Badge>
             <p className={tab === "all" ? "text-white" : ""}>All</p>
           </div>
@@ -181,32 +199,72 @@ export const Report = () => {
           </div>
         </div>
         <div className="col-span-10"></div>
+        <div className="flex gap-3 col-span-4">
+          <Badge
+            variant="default"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("all")}
+          >
+            <p>All</p>
+          </Badge>
+          <Badge
+            variant="high"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("high")}
+          >
+            <p>High</p>
+          </Badge>
+          <Badge
+            variant="medium"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("medium")}
+          >
+            <p>Medium</p>
+          </Badge>
+          <Badge
+            variant="low"
+            className="hover:cursor-pointer"
+            onClick={() => setTabFilter("low")}
+          >
+            <p>Low</p>
+          </Badge>
+        </div>
+        <div className="col-span-8"></div>
         {tab === "all" ? (
           <>
             <div className="col-span-12">
               <p className="capitalize text-xl font-medium">All</p>
             </div>
             <div className="flex flex-wrap gap-5 col-span-12">
-              {tasks?.map((task) => (
-                <div
-                  key={task._id}
-                  className={`flex flex-col gap-2 min-w-72 bg-dark text-white rounded-md p-4 hover:cursor-pointer relative`}
-                  onClick={() => {
-                    setOpenModal(true);
-                    setIdTask(task._id);
-                  }}
-                >
-                  <p className="text-xl font-medium">{task?.title}</p>
-                  <p className="opacity-80">
-                    Priority :{" "}
-                    <span className="uppercase">{task?.priority}</span>
-                  </p>
-                  <p>
-                    {dayjs(task?.deadlineDate).format("dddd, DD MMMM YYYY")}
-                  </p>
-                  <p className="opacity-70">view details...</p>
+              {allTask?.length > 0 ? (
+                allTask?.map((task) => (
+                  <div
+                    key={task._id}
+                    className={`flex flex-col gap-2 min-w-72 text-dark rounded-md p-4 hover:cursor-pointer relative ${
+                      task.priority === "high"
+                        ? "bg-red-300"
+                        : task.priority === "medium"
+                        ? "bg-yellow-200"
+                        : "bg-green-300"
+                    }`}
+                    onClick={() => {
+                      setOpenModal(true);
+                      setIdTask(task._id);
+                    }}
+                  >
+                    <p className="text-xl font-medium">{task?.title}</p>
+                    <p>
+                      {dayjs(task?.deadlineDate).format("dddd, DD MMMM YYYY")}
+                    </p>
+                    <p className="opacity-70">view details...</p>
+                  </div>
+                ))
+              ) : (
+                <div className="flex w-full gap-2 items-center bg-white px-4 py-6 rounded-lg">
+                  <FileX size={20} />
+                  <p>No Task</p>
                 </div>
-              ))}
+              )}
             </div>
           </>
         ) : (
@@ -215,25 +273,38 @@ export const Report = () => {
               <p className="capitalize text-xl font-medium">Today</p>
             </div>
             <div className="flex flex-wrap gap-5 col-span-12">
-              {todayTask?.map((task) => (
-                <div
-                  key={task._id}
-                  className="flex flex-col gap-2 min-w-72 bg-dark text-white rounded-md p-4 hover:cursor-pointer"
-                  onClick={() => {
-                    setOpenModal(true), setIdTask(task._id);
-                  }}
-                >
-                  <p className="text-xl font-medium">{task?.title}</p>
-                  <p className="opacity-80">
-                    Priority :{" "}
-                    <span className="uppercase">{task?.priority}</span>
-                  </p>
-                  <p>
-                    {dayjs(task?.deadlineDate).format("dddd, DD MMMM YYYY")}
-                  </p>
-                  <p className="opacity-70">view details...</p>
+              {todayTask?.length > 0 ? (
+                todayTask?.map((task) => (
+                  <div
+                    key={task._id}
+                    className={`flex flex-col gap-2 min-w-72 text-dark rounded-md p-4 hover:cursor-pointer ${
+                      task.priority === "high"
+                        ? "bg-red-300"
+                        : task.priority === "medium"
+                        ? "bg-yellow-200"
+                        : "bg-green-300"
+                    }`}
+                    onClick={() => {
+                      setOpenModal(true), setIdTask(task._id);
+                    }}
+                  >
+                    <p className="text-xl font-medium">{task?.title}</p>
+                    <p className="opacity-80">
+                      Priority :{" "}
+                      <span className="uppercase">{task?.priority}</span>
+                    </p>
+                    <p>
+                      {dayjs(task?.deadlineDate).format("dddd, DD MMMM YYYY")}
+                    </p>
+                    <p className="opacity-70">view details...</p>
+                  </div>
+                ))
+              ) : (
+                <div className="flex w-full gap-2 items-center bg-white px-4 py-6 rounded-lg">
+                  <FileX size={20} />
+                  <p>No Today Task</p>
                 </div>
-              ))}
+              )}
             </div>
           </>
         )}
